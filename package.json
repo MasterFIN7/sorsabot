@@ -1,0 +1,14 @@
+{
+  "name": "sorsabot",
+  "version": "1.0.0",
+  "description": "sorsabot",
+  "main": "bot.js",
+  "scripts": {
+    "test": "node bot.js"
+  },
+  "author": "Master FIN",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^11.3.2"
+  }
+}
