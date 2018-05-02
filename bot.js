@@ -1,52 +1,56 @@
+const botconfig = require("./botconfig.json");
 const Discord = require("discord.js");
+const fs = require("fs");
+const bot = new Discord.Client({disableEveryone: true});
+bot.commands = new Discord.Collection();
 
-const PREFIX = "s/";
+fs.readdir("./commands/", (err, files) => {
 
-var bot = new Discord.Client();
+  if(err) console.log(err);
 
-var fortunes = [
-    "Yes",
-    "No",
-    "Maybe",
-    "Noob"
-];
+  let jsfile = files.filter(f => f.split(".").pop() === "js")
+  if(jsfile.length <= 0){
+    console.log("En loydä komentoja!");
+    return;
+  }
 
-bot.on("ready", function() {
-    console.log("Ready");
-    bot.user.setGame("Use s/help");
+  jsfile.forEach((f, i) =>{
+    let props = require(`./commands/${f}`);
+    console.log(`${f} loaded!`);
+    bot.commands.set(props.help.name, props);
+  });
 });
 
-bot.on("message", function(message) {
-    if (message.author.equals(bot.user)) return;
-  
-    if (!message.content.startsWith(PREFIX)) return;
-  
-    var args = message.content.substring(PREFIX.length).split(" ");
-  
-    switch (args[0].toLowerCase()) {
-      case "ping":
-        message.channel.sendMessage("pong");
-        break;
-      case "info":
-        message.channel.sendMessage("Olen sorsabot!");
-        break;
-      case "8ball":
-        if (args[1]) message.channel.sendMessage(fortunes[Math.floor(Math.random() * fortunes.length)]);
-        else message.channel.sendMessage("Can't read that");
-        break;
-      case "help":
-        var embed = new Discord.RichEmbed()
-        .setTitle("My Prefix is s/")
-        .addField("Commands:", "ping\ninfo\n8ball\nhelp")
-        .setColor("PINK")
-        .setThumbnail(bot.user.avatarURL)
-        message.member.sendEmbed(embed);
-        
-        message.reply("Check your DM.")
-        break;
-      default:
-        message.channel.sendMessage("Invalid Command");
-    }
+bot.on("ready", async () => {
+    console.log(`${bot.user.username} is online!`);
+
+    bot.user.setActivity("V 0.1 | s/help", {type: "LISTENING"});
+
+});
+
+bot.on(`guildMemberAdd`, member => {
+  let welChannel = member.guild.channels.find("name", "aula");
+  /* Using dC for short. */
+
+
+  welChannel.send(`**<@${member.user.id}>, Tervetuloa sorsailemaan!**`);
+
+});
+
+bot.on("message", async message => {
+    if(message.author.bot) return;
+    if(message.channel.type === "dm") return;
+
+
+    let prefix = botconfig.prefix;
+    let messageArray = message.content.split(" ");
+    let cmd = messageArray[0];
+    let args = messageArray.slice(1);
+
+
+    let commandfile = bot.commands.get(cmd.slice(prefix.length));
+    if(commandfile) commandfile.run(bot,message,args);
+
 });
 
 bot.login(process.env.BOT_TOKEN);
